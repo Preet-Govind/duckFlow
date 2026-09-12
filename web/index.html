@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teal — Analytical Database OS Control Plane</title>
+    <!-- Modern typography & icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-base: #0a0b0e;
+            --bg-surface: rgba(20, 24, 33, 0.7);
+            --bg-input: #121620;
+            --border-glow: rgba(0, 229, 255, 0.15);
+            --border-dim: rgba(255, 255, 255, 0.06);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --teal-bright: #00e5ff;
+            --teal-deep: #00a8cc;
+            --teal-gradient: linear-gradient(135deg, #00e5ff 0%, #00a8cc 100%);
+            --red-bright: #ff3366;
+            --green-bright: #00e676;
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 260px;
+            background: linear-gradient(180deg, #10121a 0%, #07080b 100%);
+            border-right: 1px solid var(--border-dim);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px 16px;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+
+        .brand-logo {
+            font-size: 24px;
+            background: var(--teal-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand i {
+            color: var(--teal-bright);
+            font-size: 22px;
+            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.4));
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 0 0 1px var(--border-dim);
+        }
+
+        .nav-item.active i {
+            color: var(--teal-bright);
+            filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.3));
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+            transition: color 0.25s ease;
+        }
+
+        .nav-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border-dim);
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-footer i {
+            color: var(--green-bright);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+                filter: drop-shadow(0 0 4px var(--green-bright));
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        /* Main Area */
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top Header */
+        header {
+            height: 70px;
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            background: rgba(13, 14, 18, 0.5);
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .header-title h2 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 16px;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-dim);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meta-tag span {
+            color: var(--teal-bright);
+        }
+
+        /* View Container */
+        .view-content {
+            flex-grow: 1;
+            padding: 32px;
+            overflow-y: auto;
+            display: none;
+            height: calc(100vh - 70px);
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: var(--glass-blur);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 24px;
+        }
+
+        .glass-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        /* SQL Editor Styling */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sql-textarea {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .sql-textarea:focus {
+            border-color: var(--teal-bright);
+            box-shadow: 0 0 12px var(--border-glow);
+        }
+
+        .editor-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--teal-gradient);
+            border: none;
+            color: #0b0c10;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 229, 255, 0.35);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-sec {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .btn-sec:hover {
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-dim);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-dim);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-dim);
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--green-bright);
+            border: 1px solid rgba(0, 230, 118, 0.2);
+        }
+
+        .badge-failed {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--red-bright);
+            border: 1px solid rgba(255, 51, 102, 0.2);
+        }
+
+        .badge-running {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--teal-bright);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        /* Grid Layouts */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-info h4 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .metric-info p {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 229, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--teal-bright);
+            font-size: 20px;
+        }
+
+        /* Form Controls */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.25s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--teal-bright);
+        }
+
+        /* Error Box */
+        .error-banner {
+            background: rgba(255, 51, 102, 0.08);
+            border: 1px solid rgba(255, 51, 102, 0.2);
+            color: #ff80ab;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+
+        /* History drawer or logs detail */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #11141e;
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            width: 600px;
+            max-width: 90%;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-body pre {
+            background: #090a0f;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div>
+            <div class="brand">
+                <img src="/duckflow_logo.png" alt="DuckFlow Logo"
+                    style="height: 36px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);">
+                <div class="brand-logo">DuckFlow</div>
+            </div>
+
+            <ul class="nav-list">
+                <li class="nav-item active" onclick="switchView('overview')">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span>Overview</span>
+                </li>
+                <li class="nav-item" onclick="switchView('studio')">
+                    <i class="fa-solid fa-code"></i>
+                    <span>Query Studio</span>
+                </li>
+                <li class="nav-item" onclick="switchView('scheduler')">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Scheduler</span>
+                </li>
+                <li class="nav-item" onclick="switchView('tenants')">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>SaaS Tenants</span>
+                </li>
+                <li class="nav-item" onclick="switchView('models')">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>AI Models</span>
+                </li>
+                <li class="nav-item" onclick="switchView('routines')">
+                    <i class="fa-solid fa-cube"></i>
+                    <span>Routines</span>
+                </li>
+                <li class="nav-item" onclick="switchView('flows')">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span>Flows (DAGs)</span>
+                </li>
+                <li class="nav-item" onclick="switchView('sessions')">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <span>Stat Activity</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-footer">
+            <i class="fa-solid fa-circle"></i>
+            <span>Connected to Local</span>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main>
+        <header>
+            <div class="header-title">
+                <h2 id="view-title">Overview Dashboard</h2>
+            </div>
+            <div class="header-meta">
+                <div class="meta-tag">Engine: <span>DuckDB LanceDB</span></div>
+                <div class="meta-tag">Port: <span>8080 8081 9001</span></div>
+            </div>
+        </header>
+
+        <!-- VIEW: OVERVIEW -->
+        <div id="view-overview" class="view-content active">
+            <div class="dashboard-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Active Sessions</h4>
+                        <p id="stat-active-sessions">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Registered Jobs</h4>
+                        <p id="stat-registered-jobs">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Stored Routines</h4>
+                        <p id="stat-registered-routines">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-cubes"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>SaaS Tenants</h4>
+                        <p id="stat-active-tenants">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Flows (DAGs)</h4>
+                        <p id="stat-active-flows">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-diagram-project"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>AI Models</h4>
+                        <p id="stat-active-models">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 32px;">
+                <div class="glass-card">
+                    <h3><i class="fa-solid fa-wave-square"></i> Real-time Query Activity</h3>
+                    <div class="table-wrapper">
+                        <table id="table-overview-sessions">
+                            <thead>
+                                <tr>
+                                    <th>Session ID</th>
+                                    <th>Client IP</th>
+                                    <th>Status</th>
+                                    <th>Start Time</th>
+                                    <th>Current Query</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">No active
+                                        queries</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: STUDIO -->
+        <div id="view-studio" class="view-content" style="padding: 0;">
+            <div style="display: flex; height: 100%; position: relative;">
+                
+                <!-- Toggle Button for Sidebar -->
+                <button id="db-sidebar-toggle" onclick="toggleSidebar()" style="position: absolute; left: 16px; top: 16px; z-index: 100; background: var(--bg-surface); border: 1px solid var(--border-dim); color: #fff; border-radius: 4px; padding: 6px 10px; cursor: pointer; backdrop-filter: blur(10px);">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <!-- Database Explorer Sidebar -->
+                <div id="db-sidebar"
+                    style="width: 280px; border-right: 1px solid var(--border-dim); background: rgba(0,0,0,0.2); display: flex; flex-direction: column; transition: width 0.3s, opacity 0.3s; overflow: hidden; padding-top: 48px;">
+                    <div
+                        style="padding: 16px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                        <h3 style="font-size: 14px; font-weight: 600; color: #fff;"><i class="fa-solid fa-database"
+                                style="color: var(--teal-deep); margin-right: 8px;"></i> Database Navigator</h3>
+                        <i class="fa-solid fa-rotate-right"
+                            style="cursor: pointer; color: var(--text-secondary); transition: color 0.2s;"
+                            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-secondary)'"
+                            onclick="fetchDatabaseTree()"></i>
+                    </div>
+                    <div id="db-tree" style="flex-grow: 1; overflow-y: auto; padding: 12px; font-size: 13px; white-space: nowrap;">
+                        <div style="color: var(--text-secondary); text-align: center; margin-top: 20px;"><i
+                                class="fa-solid fa-database"></i> Connect or refresh to load catalog.</div>
+                    </div>
+                </div>
+
+                <!-- Main Editor Area -->
+                <div id="editor-main-area"
+                    style="flex-grow: 1; padding: 24px; padding-left: 64px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; transition: padding-left 0.3s;">
+                    <div class="glass-card" style="margin-bottom: 0; flex-shrink: 0;">
+                        <h3><i class="fa-solid fa-terminal"></i> SQL Query Editor</h3>
+                        <div class="editor-container">
+                            <textarea id="sql-editor" class="sql-textarea"
+                                placeholder="SELECT * FROM information_schema.tables; -- Select text to run specifically, or press Ctrl+Enter to run" onkeydown="handleEditorKeyDown(event)"></textarea>
+                            <div class="editor-actions">
+                                <span id="query-time" style="font-size: 13px; color: var(--text-secondary);"></span>
+                                <button class="btn" onclick="runQuery()"><i class="fa-solid fa-play"></i> Execute</button>
+                            </div>
+                        </div>
+                        <div id="error-banner" class="error-banner"></div>
+                    </div>
+
+                    <!-- Bottom Split Pane: Results & Logs -->
+                    <div style="display: flex; flex-grow: 1; gap: 16px; min-height: 300px; margin-bottom: 0;">
+                        <!-- Results Table -->
+                        <div class="glass-card" id="results-card" style="flex-grow: 1; width: 70%; display: flex; flex-direction: column; margin-bottom: 0;">
+                            <h3 style="flex-shrink: 0;"><i class="fa-solid fa-table"></i> Query Results</h3>
+                            <div class="table-wrapper"
+                                style="flex-grow: 1; overflow-y: auto; border-top-left-radius: 0; border-top-right-radius: 0;">
+                                <table id="table-results">
+                                    <thead>
+                                        <tr id="results-header"></tr>
+                                    </thead>
+                                    <tbody id="results-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Messages / Logs -->
+                        <div class="glass-card" id="logs-card" style="width: 30%; flex-shrink: 0; display: flex; flex-direction: column; margin-bottom: 0; background: rgba(10, 15, 20, 0.9);">
+                            <h3 style="flex-shrink: 0; font-size: 14px;"><i class="fa-solid fa-envelope-open-text"></i> Notices / Logs</h3>
+                            <div id="query-messages" style="flex-grow: 1; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); padding: 8px; border-top: 1px solid var(--border-dim);">
+                                <div style="text-align: center; margin-top: 40px; opacity: 0.5;">No messages</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SCHEDULER -->
+        <div id="view-scheduler" class="view-content">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-circle-plus"></i> Schedule New Cron Job</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="job-name">Job Name</label>
+                        <input type="text" id="job-name" class="form-input" placeholder="refresh_daily_sales">
+                    </div>
+                    <div class="form-group">
+                        <label for="job-cron">Cron Schedule</label>
+                        <input type="text" id="job-cron" class="form-input" placeholder="0 2 * * *">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="job-command">SQL Execution Command</label>
+                    <input type="text" id="job-command" class="form-input" placeholder="CALL public.my_etl_proc();">
+                </div>
+                <button class="btn" onclick="createJob()"><i class="fa-solid fa-plus"></i> Register Job</button>
+            </div>
+
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-list-check"></i> Registered Jobs</h3>
+                <div class="table-wrapper">
+                    <table id="table-jobs">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Schedule</th>
+                                <th>Target Command</th>
+                                <th>Status</th>
+                                <th>Last Run</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-history"></i> Job Run History</h3>
+                <div class="table-wrapper">
+                    <table id="table-job-history">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Job Name</th>
+                                <th>Status</th>
+                                <th>Started At</th>
+                                <th>Finished At</th>
+                                <th>Duration (ms)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ROUTINES -->
+        <div id="view-routines" class="view-content">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-boxes-stacked"></i> Stored Procedures & Functions</h3>
+                <div class="table-wrapper">
+                    <table id="table-routines">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Schema</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Arguments</th>
+                                <th>Return Type</th>
+                                <th>Language</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: FLOWS (DAGs) -->
+        <div id="view-flows" class="view-content">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-diagram-project"></i> Registered Flows (DAG Pipelines)</h3>
+                <div class="table-wrapper">
+                    <table id="table-flows">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Project</th>
+                                <th>Flow Name</th>
+                                <th>Step Count</th>
+                                <th>Created At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-timeline"></i> Flow Run History</h3>
+                <div class="table-wrapper">
+                    <table id="table-flow-runs">
+                        <thead>
+                            <tr>
+                                <th>Run ID</th>
+                                <th>Flow Name</th>
+                                <th>Status</th>
+                                <th>Started At</th>
+                                <th>Finished At</th>
+                                <th>Duration (ms)</th>
+                                <th>Steps & Diagnostics</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SESSIONS -->
+        <div id="view-sessions" class="view-content">
+            <div class="dashboard-grid" style="margin-bottom: 24px;">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Total Queries Executed</h4>
+                        <p id="stat-total-queries">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h4>Failed Queries</h4>
+                        <p id="stat-failed-queries">0</p>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: var(--red-bright);"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-circle-nodes"></i> Current Client Connections (teal_stat_activity)</h3>
+                <div class="table-wrapper">
+                    <table id="table-sessions">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Client IP</th>
+                                <th>Status</th>
+                                <th>Query Start Time</th>
+                                <th>Current Query</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Tenants View -->
+        <div id="view-tenants" class="view-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-size: 24px; font-weight: 600; color: #fff;">SaaS Tenants</h2>
+                <button class="btn btn-primary" onclick="createTenant()"><i class="fa-solid fa-plus"></i> New
+                    Tenant</button>
+            </div>
+
+            <div class="card">
+                <table class="data-table" id="table-tenants">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>API Key</th>
+                            <th>Target Database Path</th>
+                            <th>Resource Sandbox (Mem/CPU/QPS)</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: MODELS -->
+        <div id="view-models" class="view-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-size: 24px; font-weight: 600; color: #fff;">Registered AI Models</h2>
+            </div>
+
+            <div class="card glass-card">
+                <table class="data-table" id="table-models">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Endpoint</th>
+                            <th>API Key Set</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal for Logs Details -->
+    <div id="log-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title" style="color: var(--teal-bright);">Execution Log</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 20px;" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <pre id="modal-body-text"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchView(viewId) {
+            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            document.getElementById('view-' + viewId).classList.add('active');
+
+            // Set header title
+            const titles = {
+                'overview': 'Overview Dashboard',
+                'studio': 'SQL Query Studio',
+                'scheduler': 'Job Scheduler Control',
+                'routines': 'Routines Catalog',
+                'flows': 'DAG Orchestration Engine',
+                'sessions': 'Stat Activity Metrics',
+                'tenants': 'SaaS Tenants & Security',
+                'models': 'Bring Your Own Model'
+            };
+            document.getElementById('view-title').innerText = titles[viewId] || 'Dashboard';
+
+            // Set active navigation button
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(n => {
+                if (n.getAttribute('onclick').includes(viewId)) {
+                    n.classList.add('active');
+                }
+            });
+
+            // Fetch statistics and specific view data
+            loadViewData(viewId);
+        }
+
+        function loadViewData(viewId) {
+            fetchStats();
+            if (viewId === 'overview') {
+                fetchOverviewSessions();
+            } else if (viewId === 'scheduler') {
+                fetchJobs();
+                fetchJobHistory();
+            } else if (viewId === 'routines') {
+                fetchRoutines();
+            } else if (viewId === 'flows') {
+                fetchFlows();
+                fetchFlowRuns();
+            } else if (viewId === 'sessions') {
+                fetchSessions();
+            } else if (viewId === 'studio') {
+                fetchDatabaseTree();
+            } else if (viewId === 'tenants') {
+                fetchTenants();
+            } else if (viewId === 'models') {
+                fetchModels();
+            }
+        }
+
+        // Global stats
+        function fetchStats() {
+            fetch('/api/stat-activity')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-active-sessions').innerText = data.sessions ? data.sessions.length : 0;
+                });
+            fetch('/api/jobs')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-registered-jobs').innerText = data.length;
+                });
+            fetch('/api/routines')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-registered-routines').innerText = data.length;
+                });
+            fetch('/api/tenants')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-active-tenants').innerText = data.length;
+                });
+            fetch('/api/flows')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-active-flows').innerText = data.length;
+                });
+            fetch('/api/models')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-active-models').innerText = data.length;
+                });
+        }
+
+        // Fetch Overview Sessions
+        function fetchOverviewSessions() {
+            fetch('/api/stat-activity')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-overview-sessions tbody');
+                    tbody.innerHTML = '';
+                    const sessions = data.sessions || [];
+                    if (sessions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No active queries</td></tr>';
+                        return;
+                    }
+                    sessions.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${s.session_id}</td>
+                            <td>${s.client_ip}</td>
+                            <td><span class="badge ${s.status === 'ACTIVE' ? 'badge-running' : 'badge-success'}">${s.status}</span></td>
+                            <td>${s.query_start_time}</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${s.current_query || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Query Studio
+        function fetchDatabaseTree() {
+            const treeEl = document.getElementById('db-tree');
+            treeEl.innerHTML = '<div style="color: var(--text-secondary); text-align: center; margin-top: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading schemas...</div>';
+
+            fetch('/api/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: "SELECT catalog_name, schema_name FROM information_schema.schemata ORDER BY catalog_name, schema_name;" })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        let html = '';
+                        data.rows.forEach(row => {
+                            const catalog = row[0];
+                            const schema = row[1];
+                            const fullSchema = catalog + '.' + schema;
+                            const containerId = 'schema-' + catalog + '-' + schema;
+                            html += `
+                            <div style="margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-weight: 500; padding: 6px; border-radius: 6px; cursor: pointer;" 
+                                     onclick="toggleSchema('${catalog}', '${schema}', '${containerId}', this)">
+                                    <i class="fa-solid fa-database" style="color: #f6d365; width: 14px; transition: transform 0.2s;"></i> 
+                                    <span>${fullSchema}</span>
+                                </div>
+                                <div id="${containerId}" style="padding-left: 20px; display: none;"></div>
+                            </div>
+                        `;
+                        });
+                        if (data.rows.length === 0) {
+                            html = '<div style="color: var(--text-secondary); text-align: center; margin-top: 20px;">No schemas found.</div>';
+                        }
+                        treeEl.innerHTML = html;
+                    } else {
+                        treeEl.innerHTML = '<div style="color: var(--red-bright); padding: 10px;">Failed to load schemas.</div>';
+                    }
+                })
+                .catch(err => {
+                    treeEl.innerHTML = '<div style="color: var(--red-bright); padding: 10px;">Network error.</div>';
+                });
+        }
+
+        function toggleSchema(catalog, schema, containerId, el) {
+            const container = document.getElementById(containerId);
+            const icon = el.querySelector('i.fa-database') || el.querySelector('i.fa-folder-open');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.classList.remove('fa-database');
+                icon.classList.add('fa-folder-open');
+
+                // Lazy load tables
+                if (container.innerHTML.trim() === '') {
+                    container.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px; padding: 4px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading tables...</div>';
+                    fetch('/api/query', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: `SELECT table_name, table_type FROM information_schema.tables WHERE table_catalog = '${catalog}' AND table_schema = '${schema}' ORDER BY table_name;` })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                let html = '';
+                                data.rows.forEach(row => {
+                                    const table = row[0];
+                                    const type = row[1];
+                                    const iconClass = type === 'VIEW' ? 'fa-eye' : 'fa-table';
+                                    const iconColor = type === 'VIEW' ? 'var(--teal-bright)' : 'var(--teal-deep)';
+                                    const tContainerId = 'table-' + catalog + '-' + schema + '-' + table;
+                                    html += `
+                                    <div style="margin-bottom: 2px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px; border-radius: 4px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                                            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); flex-grow: 1;" onclick="toggleTable('${catalog}', '${schema}', '${table}', '${tContainerId}', this)">
+                                                <i class="fa-solid fa-chevron-right" style="font-size: 10px; width: 10px; transition: transform 0.2s;"></i>
+                                                <i class="fa-solid ${iconClass}" style="color: ${iconColor}; width: 14px;"></i>
+                                                <span style="color: #e2e8f0;">${table}</span>
+                                            </div>
+                                            <div style="display: flex; gap: 6px;">
+                                                <i class="fa-solid fa-play" title="Select Top 100" style="font-size: 10px; color: var(--green-bright); padding: 4px; border-radius: 4px;" onmouseover="this.style.background='rgba(0, 230, 118, 0.2)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('sql-editor').value = 'SELECT * FROM ${catalog}.${schema}.${table} LIMIT 100;'; runQuery();"></i>
+                                                <i class="fa-solid fa-info-circle" title="Describe Table" style="font-size: 10px; color: var(--teal-bright); padding: 4px; border-radius: 4px;" onmouseover="this.style.background='rgba(0, 229, 255, 0.2)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('sql-editor').value = 'DESCRIBE ${catalog}.${schema}.${table};'; runQuery();"></i>
+                                            </div>
+                                        </div>
+                                        <div id="${tContainerId}" style="padding-left: 28px; display: none; font-family: 'JetBrains Mono', monospace; font-size: 11px;"></div>
+                                    </div>
+                                `;
+                                });
+                                if (data.rows.length === 0) html = '<div style="color: var(--text-secondary); font-size: 11px; padding: 4px;">No tables.</div>';
+                                container.innerHTML = html;
+                            }
+                        });
+                }
+            } else {
+                container.style.display = 'none';
+                icon.classList.remove('fa-folder-open');
+                icon.classList.add('fa-database');
+            }
+        }
+
+        function toggleTable(catalog, schema, table, containerId, el) {
+            const container = document.getElementById(containerId);
+            const chevron = el.querySelector('i.fa-chevron-right') || el.querySelector('i.fa-chevron-down');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                chevron.classList.remove('fa-chevron-right');
+                chevron.classList.add('fa-chevron-down');
+
+                // Lazy load columns
+                if (container.innerHTML.trim() === '') {
+                    container.innerHTML = '<div style="color: var(--text-secondary); padding: 2px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+                    fetch('/api/query', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: `SELECT column_name, data_type FROM information_schema.columns WHERE table_catalog = '${catalog}' AND table_schema = '${schema}' AND table_name = '${table}' ORDER BY ordinal_position;` })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                let html = '';
+                                data.rows.forEach(row => {
+                                    html += `
+                                    <div style="display: flex; justify-content: space-between; padding: 3px 0; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                        <span style="color: #fff;">${row[0]}</span>
+                                        <span style="color: var(--teal-deep);">${row[1]}</span>
+                                    </div>
+                                `;
+                                });
+                                if (data.rows.length === 0) html = '<div style="color: var(--text-secondary); padding: 2px;">No columns.</div>';
+                                container.innerHTML = html;
+                            }
+                        });
+                }
+            } else {
+                container.style.display = 'none';
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-right');
+            }
+        }
+
+        function editObjectInStudio(codeStr) {
+            switchView('studio');
+            document.getElementById('sql-editor').value = codeStr;
+            const errBanner = document.getElementById('error-banner');
+            const resultsCard = document.getElementById('results-card');
+            const queryTime = document.getElementById('query-time');
+            errBanner.style.display = 'none';
+            resultsCard.style.display = 'none';
+            queryTime.innerText = 'Ready to edit...';
+            document.getElementById('sql-editor').focus();
+        }
+
+        function handleEditorKeyDown(e) {
+            if (e.ctrlKey && (e.key === 'Enter' || e.keyCode === 13)) {
+                e.preventDefault();
+                runQuery();
+            }
+        }
+
+        let sidebarVisible = true;
+        function toggleSidebar() {
+            const sidebar = document.getElementById('db-sidebar');
+            const mainArea = document.getElementById('editor-main-area');
+            sidebarVisible = !sidebarVisible;
+            if (sidebarVisible) {
+                sidebar.style.width = '280px';
+                sidebar.style.opacity = '1';
+                mainArea.style.paddingLeft = '64px';
+            } else {
+                sidebar.style.width = '0px';
+                sidebar.style.opacity = '0';
+                mainArea.style.paddingLeft = '24px';
+            }
+        }
+
+        function runQuery() {
+            const editor = document.getElementById('sql-editor');
+            let query = editor.value.substring(editor.selectionStart, editor.selectionEnd);
+            if (!query || query.trim() === '') {
+                query = editor.value;
+            }
+            if (!query.trim()) return;
+
+            document.getElementById('error-banner').style.display = 'none';
+            const btn = document.querySelector('.editor-actions button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executing...';
+            btn.disabled = true;
+            
+            const queryTime = document.getElementById('query-time');
+            queryTime.innerText = 'Executing query...';
+
+            const startTime = performance.now();
+
+            fetch('/api/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            })
+                .then(async r => {
+                    const data = await r.json();
+                    if (!r.ok) {
+                        throw new Error(data.error || 'Server error');
+                    }
+                    return data;
+                })
+                .then(data => {
+                    const elapsed = (performance.now() - startTime).toFixed(2);
+                    queryTime.innerText = `Executed in ${elapsed} ms`;
+                    document.getElementById('results-card').style.display = 'flex';
+
+                    // Process results table
+                    const header = document.getElementById('results-header');
+                    const body = document.getElementById('results-body');
+                    header.innerHTML = '';
+                    body.innerHTML = '';
+
+                    if (data.status === 'success' && data.columns && data.columns.length > 0) {
+                        data.columns.forEach(c => {
+                            const th = document.createElement('th');
+                            th.innerText = c;
+                            header.appendChild(th);
+                        });
+
+                        data.rows.forEach(row => {
+                            const tr = document.createElement('tr');
+                            row.forEach(val => {
+                                const td = document.createElement('td');
+                                td.innerText = val === null ? 'NULL' : val;
+                                tr.appendChild(td);
+                            });
+                            body.appendChild(tr);
+                        });
+                    } else if (data.status === 'success') {
+                        header.innerHTML = '<th>Status</th>';
+                        body.innerHTML = '<tr><td style="color: var(--green-bright);"><i class="fa-solid fa-check"></i> Command executed successfully</td></tr>';
+                    } else {
+                        throw new Error(data.error || "Unknown error");
+                    }
+                    
+                    // Fetch latest logs automatically to show in Messages pane
+                    fetchRecentLogs();
+                })
+                .catch(err => {
+                    queryTime.innerText = '';
+                    const errBanner = document.getElementById('error-banner');
+                    errBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${err.message}`;
+                    errBanner.style.display = 'block';
+                    fetchRecentLogs(); // Also fetch logs on error
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+        
+        function fetchRecentLogs() {
+            fetch('/api/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: "SELECT log_time, message FROM duckflow_catalog.duckflow_logs ORDER BY id DESC LIMIT 50;" })
+            })
+            .then(r => r.json())
+            .then(data => {
+                const logsDiv = document.getElementById('query-messages');
+                logsDiv.innerHTML = '';
+                if (!data.rows || data.rows.length === 0) {
+                    logsDiv.innerHTML = '<div style="text-align: center; margin-top: 40px; opacity: 0.5;">No messages in recent log history</div>';
+                    return;
+                }
+                
+                data.rows.forEach(row => {
+                    const time = row[0] ? row[0].split(' ')[1] : ''; // Just get HH:MM:SS
+                    const msg = row[1];
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '6px';
+                    
+                    let color = 'var(--text-secondary)';
+                    if (msg.includes('ERROR') || msg.includes('Parser Error')) color = 'var(--red-bright)';
+                    else if (msg.includes('NOTICE') || msg.includes('SUCCESS')) color = 'var(--green-bright)';
+                    
+                    div.innerHTML = `<span style="opacity: 0.5; margin-right: 8px;">[${time}]</span> <span style="color: ${color}">${msg}</span>`;
+                    logsDiv.appendChild(div);
+                });
+            })
+            .catch(() => {});
+        }
+
+        // Scheduler Views
+        function fetchJobs() {
+            fetch('/api/jobs')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-jobs tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No registered jobs</td></tr>';
+                        return;
+                    }
+                    data.forEach(j => {
+                        const editSql = `CREATE OR REPLACE JOB ${j.name} SCHEDULE '${j.cron_schedule}' AS ${j.command};`;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${j.id}</td>
+                            <td style="font-weight: 500;">${j.name}</td>
+                            <td style="font-family: 'JetBrains Mono', monospace;">${j.cron_schedule}</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${j.command}</td>
+                            <td><span class="badge ${j.status === 'ENABLED' ? 'badge-success' : 'badge-failed'}">${j.status}</span></td>
+                            <td>${j.last_run || 'NEVER'}</td>
+                            <td>
+                                <button class="btn btn-sec edit-btn" title="Edit Job" style="padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sec" title="${j.status === 'ENABLED' ? 'Pause Job' : 'Resume Job'}" style="padding: 4px 10px; font-size: 12px; margin-left: 5px;" onclick="toggleJob(${j.id}, '${j.status}')"><i class="fa-solid ${j.status === 'ENABLED' ? 'fa-pause' : 'fa-play'}"></i></button>
+                            </td>
+                        `;
+                        tr.querySelector('.edit-btn').onclick = () => editObjectInStudio(editSql);
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function toggleJob(jobId, currentStatus) {
+            const newStatus = currentStatus === 'ENABLED' ? 'DISABLED' : 'ENABLED';
+            fetch('/api/jobs/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: jobId, status: newStatus })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fetchJobs();
+                    } else {
+                        alert('Failed to toggle job: ' + data.error);
+                    }
+                });
+        }
+
+        function fetchJobHistory() {
+            fetch('/api/job-history')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-job-history tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No job run logs</td></tr>';
+                        return;
+                    }
+                    data.forEach(h => {
+                        const badgeClass = h.status === 'SUCCESS' ? 'badge-success' : (h.status === 'FAILED' ? 'badge-failed' : 'badge-running');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${h.id}</td>
+                            <td style="font-weight: 500;">${h.job_name}</td>
+                            <td><span class="badge ${badgeClass}">${h.status}</span></td>
+                            <td>${h.started_at}</td>
+                            <td>${h.finished_at || '-'}</td>
+                            <td>${h.duration_ms}</td>
+                            <td><button class="btn btn-sec" style="padding: 4px 10px; font-size: 12px;" onclick="showLogs(${h.id})"><i class="fa-solid fa-list"></i> Logs</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        let currentEventSource = null;
+
+        function showLogs(historyId) {
+            const modalText = document.getElementById('modal-body-text');
+            modalText.innerText = "Connecting to cluster log stream...";
+            document.getElementById('log-modal').classList.add('open');
+
+            if (currentEventSource) {
+                currentEventSource.close();
+            }
+
+            // Establish native HTML5 SSE streaming connection to the C++ Backend!
+            currentEventSource = new EventSource(`/api/logs/stream?history_id=${historyId}`);
+
+            modalText.innerText = "";
+            currentEventSource.onmessage = function (event) {
+                const payload = JSON.parse(event.data);
+                if (payload.status === "ERROR") {
+                    modalText.innerText += "\n[Stream Terminated] " + payload.log;
+                    currentEventSource.close();
+                    return;
+                }
+                modalText.innerText += payload.log;
+                // Auto-scroll to bottom
+                const modalBody = document.querySelector('.modal-body');
+                modalBody.scrollTop = modalBody.scrollHeight;
+
+                if (payload.eof) {
+                    modalText.innerText += "\n[End of Log]";
+                    currentEventSource.close();
+                }
+            };
+
+            currentEventSource.onerror = function () {
+                modalText.innerText += "\n[Stream Closed]";
+                currentEventSource.close();
+            };
+        }
+
+        function closeModal() {
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
+            document.getElementById('log-modal').classList.remove('open');
+        }
+
+        // Tenants View
+        function fetchTenants() {
+            fetch('/api/tenants')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-tenants tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No active SaaS Tenants</td></tr>';
+                        return;
+                    }
+                    data.forEach(t => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${t.id}</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; color: var(--teal-bright);">${t.api_key}</td>
+                            <td><span style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">${t.db_path}</span></td>
+                            <td><span style="color: #00e5ff; font-weight: 500; font-size: 12px;"><i class="fa-solid fa-microchip"></i> ${t.memory_limit} | ${t.thread_limit}t | ${t.qps_limit}qps</span></td>
+                            <td>${t.created_at}</td>
+                            <td><button class="btn btn-sec" style="padding: 4px 10px; font-size: 12px; color: #ff5252; border-color: rgba(255,82,82,0.3);" onclick="deleteTenant('${t.api_key}')"><i class="fa-solid fa-trash"></i> Revoke</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function createTenant() {
+            const prefix = prompt("Enter a short prefix for the API Key (e.g., 'acme'):", "usr");
+            if (!prefix) return;
+            const db_path = prompt("Enter the physical database path for isolation:", `tenants/${prefix}.db`);
+            if (!db_path) return;
+            const role_input = prompt("Enter the API Key role (read_write or read_only):", "read_write");
+            const role = role_input === 'read_only' ? 'read_only' : 'read_write';
+
+            fetch('/api/tenants', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prefix: prefix, db_path: db_path, role: role })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Tenant Provisioned! Secret API Key: ' + data.api_key);
+                        fetchTenants();
+                    } else {
+                        alert('Failed to provision tenant.');
+                    }
+                });
+        }
+
+        function deleteTenant(api_key) {
+            if (!confirm(`Are you absolutely sure you want to revoke API Key: ${api_key}? This immediately cuts off API access for the tenant.`)) return;
+
+            fetch('/api/tenants', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: api_key })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fetchTenants();
+                    } else {
+                        alert('Failed to revoke tenant.');
+                    }
+                });
+        }
+
+        function createJob() {
+            const name = document.getElementById('job-name').value;
+            const cron = document.getElementById('job-cron').value;
+            const cmd = document.getElementById('job-command').value;
+
+            if (!name || !cron || !cmd) {
+                alert('Please fill all scheduler fields.');
+                return;
+            }
+
+            const query = `CREATE JOB ${name} SCHEDULE '${cron}' AS ${cmd};`;
+
+            fetch('/api/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Job registered successfully!');
+                        document.getElementById('job-name').value = '';
+                        document.getElementById('job-cron').value = '';
+                        document.getElementById('job-command').value = '';
+                        fetchJobs();
+                    } else {
+                        alert('Error creating job: ' + data.error);
+                    }
+                });
+        }
+
+        // Routines View
+        function fetchRoutines() {
+            fetch('/api/routines')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-routines tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No stored routines</td></tr>';
+                        return;
+                    }
+                    data.forEach(r => {
+                        const editSql = `CREATE OR REPLACE ${r.type} ${r.schema}.${r.name}(${r.arguments || ''}) ${r.type === 'FUNCTION' ? 'RETURNS ' + r.return_type : ''} AS \nBEGIN\n${r.body}\nEND;`;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${r.project}</td>
+                            <td>${r.schema}</td>
+                            <td style="font-weight: 500; color: var(--teal-bright);">${r.name}</td>
+                            <td><span class="badge ${r.type === 'PROCEDURE' ? 'badge-running' : 'badge-success'}">${r.type}</span></td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${r.arguments || '-'}</td>
+                            <td>${r.return_type || 'N/A'}</td>
+                            <td>${r.language}</td>
+                            <td><button class="btn btn-sec edit-btn" style="padding: 4px 10px; font-size: 12px;"><i class="fa-solid fa-pen"></i> Edit Code</button></td>
+                        `;
+                        tr.querySelector('.edit-btn').onclick = () => editObjectInStudio(editSql);
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Sessions View
+        function fetchSessions() {
+            fetch('/api/stat-activity')
+                .then(r => r.json())
+                .then(data => {
+                    // Update global metrics
+                    if (data.totals) {
+                        document.getElementById('stat-total-queries').innerText = data.totals.queries || 0;
+                        document.getElementById('stat-failed-queries').innerText = data.totals.failed || 0;
+                    }
+
+                    const tbody = document.querySelector('#table-sessions tbody');
+                    tbody.innerHTML = '';
+                    const sessions = data.sessions || [];
+                    if (sessions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No sessions active</td></tr>';
+                        return;
+                    }
+                    sessions.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${s.session_id}</td>
+                            <td>${s.client_ip}</td>
+                            <td><span class="badge ${s.status === 'ACTIVE' ? 'badge-running' : 'badge-success'}">${s.status}</span></td>
+                            <td>${s.query_start_time}</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">${s.current_query || '-'}</td>
+                            <td><button class="btn btn-sec kill-btn" style="padding: 4px 10px; font-size: 12px; color: var(--red-bright); border-color: rgba(255,100,100,0.3);"><i class="fa-solid fa-skull"></i> Kill</button></td>
+                        `;
+                        tr.querySelector('.kill-btn').onclick = () => {
+                            if (confirm('Are you sure you want to kill session ' + s.session_id + '?')) {
+                                fetch('/api/stat-activity/kill', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ session_id: s.session_id })
+                                }).then(r => r.json()).then(res => {
+                                    if (res.status === 'success') {
+                                        fetchSessions();
+                                    } else {
+                                        alert('Failed to kill session: ' + res.error);
+                                    }
+                                });
+                            }
+                        };
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Flows (DAGs) View
+        function fetchFlows() {
+            fetch('/api/flows')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-flows tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No registered Flows. Create one via SQL: <code>CREATE FLOW ...</code></td></tr>';
+                        return;
+                    }
+                    data.forEach(f => {
+                        let stepCount = 0;
+                        try {
+                            const def = JSON.parse(f.definition_json);
+                            stepCount = def.steps ? def.steps.length : 0;
+                        } catch (e) { }
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${f.id}</td>
+                            <td>${f.project}</td>
+                            <td style="font-weight: 600; color: var(--teal-bright);">${f.name}</td>
+                            <td><span style="background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 4px 8px; border-radius: 6px; font-weight: 600; color: var(--teal-bright);">${stepCount} steps</span></td>
+                            <td>${f.created_at}</td>
+                            <td>
+                                <button class="btn" style="padding: 4px 12px; font-size: 12px;" onclick="triggerFlowRun('${f.name}', '${f.project}')"><i class="fa-solid fa-play"></i> Run DAG</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function triggerFlowRun(flowName, projectName) {
+            fetch('/api/flows/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: flowName, project: projectName })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(`Flow '${flowName}' triggered successfully! Execution is running in parallel background workers.`);
+                        setTimeout(() => fetchFlowRuns(), 500);
+                    } else {
+                        alert('Error triggering flow: ' + data.error);
+                    }
+                });
+        }
+
+        function fetchFlowRuns() {
+            fetch('/api/flows/runs')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-flow-runs tbody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No flow runs recorded</td></tr>';
+                        return;
+                    }
+                    data.forEach(r => {
+                        const badgeClass = r.status === 'SUCCESS' ? 'badge-success' : (r.status === 'FAILED' ? 'badge-failed' : 'badge-running');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${r.id}</td>
+                            <td style="font-weight: 500;">${r.flow_name}</td>
+                            <td><span class="badge ${badgeClass}">${r.status}</span></td>
+                            <td>${r.started_at}</td>
+                            <td>${r.finished_at || '-'}</td>
+                            <td>${r.duration_ms} ms</td>
+                            <td>
+                                <button class="btn btn-sec" style="padding: 4px 10px; font-size: 12px;" onclick="showFlowStepRuns(${r.id}, '${r.flow_name}')"><i class="fa-solid fa-diagram-next"></i> View Steps</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function showFlowStepRuns(runId, flowName) {
+            const modalText = document.getElementById('modal-body-text');
+            modalText.innerText = "Loading DAG step execution breakdown...";
+            document.getElementById('modal-title').innerText = `Flow Run #${runId} (${flowName}) — Step Breakdown`;
+            document.getElementById('log-modal').classList.add('open');
+
+            fetch(`/api/flows/step-runs?run_id=${runId}`)
+                .then(r => r.json())
+                .then(steps => {
+                    if (steps.length === 0) {
+                        modalText.innerText = "No step run data available for this run.";
+                        return;
+                    }
+                    let out = `===========================================================\n`;
+                    out += ` DAG FLOW EXECUTION METRICS — RUN ID: ${runId}\n`;
+                    out += `===========================================================\n\n`;
+
+                    steps.forEach(s => {
+                        out += `[STEP]: ${s.step_name.toUpperCase()}\n`;
+                        out += `  • Status     : ${s.status}\n`;
+                        out += `  • Started At : ${s.started_at}\n`;
+                        out += `  • Duration   : ${s.duration_ms} ms\n`;
+                        out += `  • Output Logs:\n    ${s.logs.split('\n').join('\n    ')}\n`;
+                        if (s.error_message) {
+                            out += `  • ERROR      : ${s.error_message}\n`;
+                        }
+                        out += `-----------------------------------------------------------\n\n`;
+                    });
+
+                    modalText.innerText = out;
+                });
+        }
+
+        function startSessionPoll() {
+            setInterval(() => {
+                if (document.getElementById('view-sessions').classList.contains('active')) {
+                    fetchSessions();
+                }
+            }, 3000);
+        }
+
+        // Initialize
+        fetchDatabaseTree();
+
+        // Auto Refresh Overview & Sessions
+        setInterval(() => {
+            const activeView = document.querySelector('.view-content.active');
+            if (activeView) {
+                const id = activeView.id.replace('view-', '');
+                if (id === 'overview') {
+                    fetchStats();
+                    fetchOverviewSessions();
+                } else if (id === 'sessions') {
+                    fetchSessions();
+                }
+            }
+        }, 3000);
+
+        // Initial Stats Load
+        fetchStats();
+
+        function fetchModels() {
+            fetch('/api/models')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.querySelector('#table-models tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No models registered</td></tr>';
+                        return;
+                    }
+                    data.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${m.id}</td>
+                            <td style="font-weight: 600; color: var(--teal-bright);">${m.name}</td>
+                            <td><span class="badge" style="background: rgba(0, 229, 255, 0.1); color: var(--teal-bright); border: 1px solid var(--teal-bright);">${m.type}</span></td>
+                            <td><code style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${m.endpoint || '-'}</code></td>
+                            <td>${m.has_key ? '<i class="fa-solid fa-check" style="color: var(--green-bright);"></i> Yes' : '<i class="fa-solid fa-xmark" style="color: var(--red-bright);"></i> No'}</td>
+                            <td>${m.created_at}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error("Error fetching models:", err));
+        }
+    </script>
+</body>
+
+</html>

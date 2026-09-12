@@ -1,0 +1,32 @@
+# Compiled binaries and build artifacts
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Database files
+*.db
+*.db.wal
+*.db.tmp
+*.sqlite
+*.sqlite3
+
+# Downloaded libraries (except statically checked in ones)
+*.zip
+*.tar.gz
+third_party/duckdb/v*/
+
+# Project Context Docs (Internal)
+project_ctx.md
+scratch/
+
+# OS/IDE files
+.vscode/
+.DS_Store
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml
