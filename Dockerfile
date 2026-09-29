@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     curl \
     wget \
+    nlohmann-json3-dev \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
