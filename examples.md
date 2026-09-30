@@ -11,10 +11,10 @@ You do **not** need a `DECLARE` block. The loop automatically scopes the variabl
 CREATE OR REPLACE PROCEDURE public.refresh_sales() AS
 BEGIN
     -- 1. Create staging data
-    CREATE TEMP TABLE qwe AS SELECT 1 AS col;
+    CREATE TEMP TABLE qwe AS SELECT 0 AS col;
     
     DROP TABLE IF EXISTS test_sp;
-    CREATE TABLE test_sp AS SELECT *, current_timestamp AS ts FROM qwe;
+    CREATE TABLE test_sp AS SELECT *,  cast(current_timestamp as timestamp )  AS ts FROM qwe;
     
     -- 2. Use DuckDB's generate_series to loop 3 times
     -- This executes the query in DuckDB, and then loops in C++ 3 times!
@@ -22,7 +22,7 @@ BEGIN
         
         -- You can reference 'i.val' if you need the number (1, 2, 3), 
         -- but here we just insert the timestamp 3 times.
-        INSERT INTO test_sp SELECT current_timestamp;
+        INSERT INTO test_sp SELECT i.val, cast(current_timestamp as timestamp ) ;
         
     END LOOP;
 END;

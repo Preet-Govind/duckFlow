@@ -1,5 +1,20 @@
 # DuckFlow
 
+<div align="center">
+
+<img src="./web/duckflow_logo.png" alt="DuckFlow logo" width="300">
+
+<br><br>
+
+<br><br>
+
+  ![DuckDB](https://img.shields.io/badge/DuckDB-1.4.3-green)
+  ![CMake](https://img.shields.io/badge/CMake-Build-green)
+  ![C++](https://img.shields.io/badge/C%2B%2B-20-green)
+  ![Docker](https://img.shields.io/badge/Docker-Supported-blue)
+</div>
+
+
 DuckFlow is a high-performance Data Engineering Control Plane built on DuckDB. It adds PostgreSQL-like features (Stored Procedures, Functions, Background Jobs, and Distributed Clusters) and a native Web IDE to embedded databases.
 
 ## Deployment (Docker)
@@ -41,5 +56,22 @@ Spin up a secondary node that joins the leader on a separate port (9090).
 - **Web IDE**: `http://localhost:8081`
 - **CLI**: `./build/teal-cli`
 
+
+
 ## License
 Open-sourced under the [MIT License](LICENSE).
+
+
+
+## Examples
+
+some of the examples - 
+
+---
+![alt text](pic1.png) 
+---
+![alt text](pic2.png) 
+---
+![alt text](pic3.png) 
+---
+![alt text](pic4.png)
